@@ -30,10 +30,27 @@ pub struct Disconnect {
     pub id: usize,
 }
 
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct GameMessage {
+    // Id of the client session
+    pub id: usize,
+    pub msg: String,
+    pub room: String, // should we replace this with the gameroom struct? At least gameroom id,
+    // and have the server send the message.
+}
+
+
 pub struct GameServer {
     sessions: HashMap<usize, Recipient<Message>>,
     rooms: HashMap<String, HashSet<usize>>,
     rng: ThreadRng,
+}
+
+// how to organize rust code with actix? 
+impl Actor for GameServer {
+    /// Just need simple capability to communicate with the other actors.
+    type Context = Context<Self>;
 }
 
 // to_owned converts to a string?
@@ -53,7 +70,25 @@ impl GameServer {
     }
 }
 
-// implement default method (instantiates the object)
+impl Default for GameServer  {
+    fn default() -> GameServer {
+
+        let mut rooms = HashMap::new();
+
+        rooms.insert("Main".to_owned(), HashSet::new());
+
+        // instantiate new deck - there should be one per room. Need 
+        // to redesign a new room object.
+
+        GameServer {
+            sessions: HashMap::new(),
+            rooms,
+            rng: rand::thread_rng()
+        }
+    }
+}
+
+// implement default method (instantiates the object), starts the  game
 impl Handler<Connect> for GameServer {
     type Result = usize;
 
@@ -109,7 +144,25 @@ impl Handler<Disconnect> for GameServer {
 }
 
 
-impl Actor for GameServer {
-    /// Just need simple capability to communicate with the other actors.
-    type Context = Context<Self>;
+/*
+* NOTESNOTESNOTESNOTES 4/21/2020
+*/
+
+/// should also create a GameCommand vs. ChatMessage. These will be different thigns. How do we distinguish these things?
+/// There should be different types of game messages: Start game. GuessRank. GuessCard. EndGame, eventually, etc.
+/// But The session should still know the server, incase it needs to send messages like creating a new room, or something.
+/// 
+/// Also don't want the bottleneck to be the server. Session communication should be directly to the gameroom. 
+/// The server actor should handle connecting sessions, moving them to rooms, letting them disconnect from a game, letting them join a game, etc.
+/// Should also handle the lobby.
+// move this over to gameroom.
+impl Handler<GameMessage> for GameServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: GameMessage, _: &mut Context<Self>){
+        self.send_message(&msg.room, msg.msg.as_str(), msg.id);
+    }
 }
+
+
+

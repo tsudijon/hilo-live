@@ -73,6 +73,63 @@ impl Handler<server::Message> for GameSession {
 
 }
 
+/// Websocket message handler. How do we scale to having many actions / buttons to use / press?
+/// Seems unwieldy to program so many of them. Is there a button push  Message?
+impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for GameSession {
+    fn handle (
+        &mut self,
+        msg: Result<ws::Message, ws::ProtocolError>,
+        ctx: &mut Self::Context,
+    ) {
+        // handle potential error
+        let msg = match msg {
+            Err(_) => {
+                ctx.stop();
+                return;
+            }
+            Ok(msg) => msg
+        };
+
+        println!("Websocket Message: {:?}", msg);
+
+        match msg {
+            ws::Message::Ping(msg) => {
+                self.hb = Instant::now();
+                ctx.pong(&msg);
+            }
+
+            ws::Message::Pong(_) => {
+                self.hb = Instant::now();
+            }
+
+            ws::Message::Text(text) => {
+                let m = text.trim();
+
+                let msg = if let Some(ref name) = self.name {
+                    format!("{}: {}", name, m)
+                } else {
+                    m.to_owned()
+                };
+
+                self.addr.do_send(server::GameMessage {
+                    id:  self.id,
+                    msg, 
+                    room: self.room.clone()
+                })
+            }
+
+            ws::Message::Binary(_) => println!("Unexpected binary"),
+            ws::Message::Close(_) => {
+                ctx.stop(); // what does stopping an actor do?
+            }
+            ws::Message::Continuation(_) => {
+                ctx.stop(); // what does stopping an actor do?
+            }
+            ws::Message::Nop => ()
+        }
+    }
+}
+
 impl GameSession {
     fn hb(&self, ctx: &mut ws::WebsocketContext<Self>) {
         ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
