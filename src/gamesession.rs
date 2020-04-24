@@ -12,27 +12,32 @@ use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
 
 use crate::server;
+use crate::gameroom;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 /// How long before lack of client response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
-struct GameSession {
+
+
+pub struct GameSession {
     // holds a unique player uuid
-    id: usize,
+    pub id: usize,
 
     // holds heartbeat to check if player is still connected (Instant is a point in time)
-    hb: Instant,
+    pub hb: Instant,
 
     // holds the game room that is joined
-    room: String,
+    pub room: String,
 
     // peer name? Is this username? Option returns an enum with Some or None
-    name: Option<String>,
+    pub name: Option<String>,
     
     // has reference to current card in hand ? Or can let the server take care of this. Needs a referece to the server however
-    addr: Addr<server::GameServer>,
+    pub addr: Addr<server::GameServer>,
+
+    //pub room_addr: Addr<gameroom::GameRoom>,
 }
 
 impl Actor for GameSession {
@@ -58,9 +63,12 @@ impl Actor for GameSession {
                 fut::ready(())
             })
             .wait(ctx);
+    }
 
-         
-
+    fn stopping(&mut self, _: &mut Self::Context) -> Running {
+        // notify chat server
+        self.addr.do_send(server::Disconnect { id: self.id });
+        Running::Stop
     }
 }
 
@@ -74,7 +82,7 @@ impl Handler<server::Message> for GameSession {
 }
 
 /// Websocket message handler. How do we scale to having many actions / buttons to use / press?
-/// Seems unwieldy to program so many of them. Is there a button push  Message?
+/// Seems unwieldy to program so many of them. Is there a button push  Message? How do we differentiate between server messages and game messages?
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for GameSession {
     fn handle (
         &mut self,
@@ -111,10 +119,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for GameSession {
                     m.to_owned()
                 };
 
-                self.addr.do_send(server::GameMessage {
+                self.addr.do_send(server::ServerMessage {
                     id:  self.id,
-                    msg, 
-                    room: self.room.clone()
+                    msg,
+                    room: self.room.clone(),
                 })
             }
 
@@ -150,4 +158,6 @@ impl GameSession {
         });
     }
 }
+
+
 

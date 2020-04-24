@@ -10,6 +10,8 @@ use actix::prelude::*;
 use rand::{self, rngs::ThreadRng, Rng};
 use std::collections::{HashMap, HashSet};
 
+
+
 /// might want to create two types of messages, one for order guess and another for rank guess. For now can accept strings and 
 /// error handle as need be.
 
@@ -32,13 +34,16 @@ pub struct Disconnect {
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct GameMessage {
+pub struct ServerMessage {
     // Id of the client session
     pub id: usize,
     pub msg: String,
-    pub room: String, // should we replace this with the gameroom struct? At least gameroom id,
+    pub room: String,
+    // should we replace this with the gameroom struct? At least gameroom id,
     // and have the server send the message.
 }
+
+
 
 
 pub struct GameServer {
@@ -113,6 +118,28 @@ impl Handler<Connect> for GameServer {
     }
 }
 
+impl Handler<ServerMessage> for GameServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: ServerMessage, _: &mut Context<Self>) {
+        self.send_message(&msg.room, msg.msg.as_str(), msg.id);
+    }
+}
+
+/*
+* NOTESNOTESNOTESNOTES 4/21/2020
+*/
+
+/// should also create a GameCommand vs. ChatMessage. These will be different thigns. How do we distinguish these things?
+/// There should be different types of game messages: Start game. GuessRank. GuessCard. EndGame, eventually, etc.
+/// But The session should still know the server, incase it needs to send messages like creating a new room, or something.
+/// 
+/// Also don't want the bottleneck to be the server. Session communication should be directly to the gameroom. 
+/// The server actor should handle connecting sessions, moving them to rooms, letting them disconnect from a game, letting them join a game, etc.
+/// Should also handle the lobby.
+/// 
+/// should we create a separate folder for actors, and file for messages?
+//
 impl Handler<Disconnect> for GameServer {
     type Result = ();
 
@@ -144,25 +171,8 @@ impl Handler<Disconnect> for GameServer {
 }
 
 
-/*
-* NOTESNOTESNOTESNOTES 4/21/2020
-*/
 
-/// should also create a GameCommand vs. ChatMessage. These will be different thigns. How do we distinguish these things?
-/// There should be different types of game messages: Start game. GuessRank. GuessCard. EndGame, eventually, etc.
-/// But The session should still know the server, incase it needs to send messages like creating a new room, or something.
-/// 
-/// Also don't want the bottleneck to be the server. Session communication should be directly to the gameroom. 
-/// The server actor should handle connecting sessions, moving them to rooms, letting them disconnect from a game, letting them join a game, etc.
-/// Should also handle the lobby.
-// move this over to gameroom.
-impl Handler<GameMessage> for GameServer {
-    type Result = ();
 
-    fn handle(&mut self, msg: GameMessage, _: &mut Context<Self>){
-        self.send_message(&msg.room, msg.msg.as_str(), msg.id);
-    }
-}
 
 
 
