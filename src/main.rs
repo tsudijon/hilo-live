@@ -2,9 +2,6 @@ use deckofcards::{Cards, Deck};
 
 mod server;
 mod gamesession;
-mod gameroom;
-
-// Examples: https://covidopoly.io/waiting-room
 
 /*
 * Probably should create a struct for player 
