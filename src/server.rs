@@ -73,6 +73,19 @@ impl GameServer {
             }
         }
     }
+
+    fn game_command(&self, room: &str, command: &str) {
+        // implement case handling
+        match command.as_str() {
+            "start_game" => {
+                self.rooms.get(room).start_game()
+            }
+            _ => println!("Invalid Game Command")
+        }
+        
+                  
+    }
+
 }
 
 impl Default for GameServer  {
@@ -126,20 +139,7 @@ impl Handler<ServerMessage> for GameServer {
     }
 }
 
-/*
-* NOTESNOTESNOTESNOTES 4/21/2020
-*/
 
-/// should also create a GameCommand vs. ChatMessage. These will be different thigns. How do we distinguish these things?
-/// There should be different types of game messages: Start game. GuessRank. GuessCard. EndGame, eventually, etc.
-/// But The session should still know the server, incase it needs to send messages like creating a new room, or something.
-/// 
-/// Also don't want the bottleneck to be the server. Session communication should be directly to the gameroom. 
-/// The server actor should handle connecting sessions, moving them to rooms, letting them disconnect from a game, letting them join a game, etc.
-/// Should also handle the lobby.
-/// 
-/// should we create a separate folder for actors, and file for messages?
-//
 impl Handler<Disconnect> for GameServer {
     type Result = ();
 
