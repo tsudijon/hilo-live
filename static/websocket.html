@@ -7,11 +7,13 @@
   <script language="javascript" type="text/javascript">
     $(function() {
       var conn = null;
+
       function log(msg) {
         var control = $('#log');
         control.html(control.html() + msg + '<br/>');
         control.scrollTop(control.scrollTop() + 1000);
       }
+
       function connect() {
         disconnect();
         var wsUri = (window.location.protocol=='https:'&&'wss://'||'ws://')+window.location.host + '/ws/';
@@ -30,6 +32,7 @@
           update_ui();
         };
       }
+
       function disconnect() {
         if (conn != null) {
           log('Disconnecting...');
@@ -38,6 +41,7 @@
           update_ui();
         }
       }
+
       function update_ui() {
         var msg = '';
         if (conn == null) {
@@ -48,6 +52,7 @@
           $('#connect').html('Disconnect');
         }
       }
+
       $('#connect').click(function() {
         if (conn == null) {
           connect();
@@ -57,6 +62,17 @@
         update_ui();
         return false;
       });
+
+      $('#StartGame').click(function() {
+        if (conn == null) {
+          connect();
+        } else {
+          disconnect();
+        }
+        update_ui();
+        return false;
+      });
+
       $('#send').click(function() {
         var text = $('#text').val();
         log('Sending: ' + text);
@@ -64,6 +80,7 @@
         $('#text').val('').focus();
         return false;
       });
+
       $('#text').keyup(function(e) {
         if (e.keyCode === 13) {
           $('#send').click();
@@ -71,6 +88,7 @@
         }
       });
     });
+
 </script>
 </head>
 <body>
@@ -78,6 +96,10 @@
 <div>
   <button id="connect">Connect</button>&nbsp;|&nbsp;Status:
   <span id="status">disconnected</span>
+</div>
+<div>
+  <button id="StartGame">StartGame</button>&nbsp;|&nbsp;Status:
+  <span id="status">inactive</span>
 </div>
 <div id="log"
      style="width:20em;height:15em;overflow:auto;border:1px solid black">

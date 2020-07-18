@@ -33,9 +33,6 @@ pub struct GameRoom {
 // need to handle someone joining the room; update their information - this is done in the server mod
 impl Default for GameRoom {
     fn default() -> GameRoom {
-        
-
-
         GameRoom {
             id: 0,
             sessions: HashMap::new(),
@@ -43,7 +40,7 @@ impl Default for GameRoom {
             firstRoundGuess: HashMap::new(),
             secondRoundGuess: HashMap::new(),
 
-            sessionOrder: vec![0],
+            sessionOrder: vec![0], //this is going to be of dynammic size.
         }
     }
 }
@@ -76,7 +73,7 @@ impl GameRoom {
     }
 
     // function to get data from a player; needs to be async?
-    fn poll_session(&mut self, sessionId: usize) -> Option<&str> {
+    fn poll_session(&self, sessionId: usize) -> Option<&str> {
         Some("To be implemented")
     }
 
@@ -125,19 +122,26 @@ impl GameRoom {
     // I want a response future here?
     fn first_round(&mut self) {
         for id in &self.sessionOrder {
-            //let guess = self.poll_session(*id).unwrap();
+            let guess = &self.poll_session(*id).unwrap();
 
-            // update the 
+            // update the firstRoundGuess variable
+
         }
     }
 
     // should return OK if everything went through, otherwise should return fail, or game restart.
     fn second_round(&mut self) {
-        
+        for id in &self.sessionOrder {
+            let guess = &self.poll_session(*id).unwrap();
+
+            // update the secondRoundGuess variable
+
+        }
     }
 
-    fn score() {
-
+    fn score(&self) { //doesn't need to be mmutable right?
+        
+        // calculate difference between secondRoundguesses and playerCards
     }
 }
 
