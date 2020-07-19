@@ -9,7 +9,8 @@ use actix::prelude::*;
 use rand::{thread_rng, seq::SliceRandom};
 use std::collections::{HashMap};
 
-use crate::server::Message;
+use crate::server::{GameServer, Message};
+
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -17,6 +18,7 @@ pub struct GameMessage {
     // Id of the client session
     pub id: usize,
     pub msg: String,
+    pub addr: Recipient<Message>
     // should we replace this with the gameroom struct? At least gameroom id,
     // and have the server send the message.
 }
@@ -57,12 +59,16 @@ impl Handler<GameMessage> for GameRoom {
         let command = msg.msg;
         match command.as_ref() {
             "start_game" => {
-                self.start_game()
+                self.start_game();
+            }
+            "add_user" => {
+                self.sessions.insert(msg.id, msg.addr);
             }
             _ => ()
         }
     }
 }
+
 
 
 
@@ -88,7 +94,7 @@ impl GameRoom {
     // tensor programming had a function in which you can use the await function in a non async function? In webcrawler video.
 
     fn start_game(&mut self) {
-        println!("New Game Started");
+        self.send_message("New Game Started", 1000);
         // decide on the order for the players
 
         // is there a rustier way of writing this? This also needs to be  the session ids.

@@ -76,12 +76,14 @@ impl GameServer {
         }
     }
 
-    fn game_command(&self, room: &str, command: &str) {
-        // implement case handling
+    fn game_command(&self, room: &str, command: &str, id: usize) {
+        // implement case handling, id
         match command.trim() {
             "start_game" => {
                 let addr = self.room_addresses.get(room).unwrap();
-                addr.do_send(GameMessage{ msg: "start_game".to_owned(), id:0});
+                addr.do_send(GameMessage{ msg: "start_game".to_owned(),
+                                          id: id,
+                                          addr: self.sessions.get(&id).unwrap().clone()});
             }
             _ => println!("Invalid Game Command")
         }
@@ -132,6 +134,8 @@ impl Handler<Connect> for GameServer {
             .or_insert(HashSet::new())
             .insert(id);
 
+        self.game_command("Main", "add_user", id);
+
         // send id back
         id
     }
@@ -146,7 +150,7 @@ impl Handler<ServerMessage> for GameServer {
 
         if m.starts_with("/command ") {
             let command = m.split("/command").collect::<Vec<_>>()[1];
-            self.game_command(&msg.room, command);
+            self.game_command(&msg.room, command, 0);
             
         } else {
             self.send_message(&msg.room, m.as_str(), msg.id);
