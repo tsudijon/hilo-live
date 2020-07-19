@@ -11,6 +11,7 @@ use rand::{self, rngs::ThreadRng, Rng};
 use std::collections::{HashMap, HashSet};
 
 
+use crate::gameroom::{GameRoom, GameMessage};
 
 /// might want to create two types of messages, one for order guess and another for rank guess. For now can accept strings and 
 /// error handle as need be.
@@ -49,6 +50,7 @@ pub struct ServerMessage {
 pub struct GameServer {
     sessions: HashMap<usize, Recipient<Message>>,
     rooms: HashMap<String, HashSet<usize>>,
+    room_addresses: HashMap<String, Recipient<GameMessage>>,
     rng: ThreadRng,
 }
 
@@ -76,9 +78,10 @@ impl GameServer {
 
     fn game_command(&self, room: &str, command: &str) {
         // implement case handling
-        match command.as_str() {
+        match command.trim() {
             "start_game" => {
-                self.rooms.get(room).start_game()
+                let addr = self.room_addresses.get(room).unwrap();
+                addr.do_send(GameMessage{ msg: "start_game".to_owned(), id:0});
             }
             _ => println!("Invalid Game Command")
         }
@@ -92,19 +95,22 @@ impl Default for GameServer  {
     fn default() -> GameServer {
 
         let mut rooms = HashMap::new();
+        let mut room_addresses = HashMap::new();
 
         rooms.insert("Main".to_owned(), HashSet::new());
+        room_addresses.insert("Main".to_owned(), GameRoom::default().start().recipient());
 
-        // instantiate new deck - there should be one per room. Need 
-        // to redesign a new room object.
+        // need to put these two objects toegether, or store all players into a room.
 
         GameServer {
             sessions: HashMap::new(),
             rooms,
+            room_addresses,
             rng: rand::thread_rng()
         }
     }
 }
+
 
 // implement default method (instantiates the object), starts the  game
 impl Handler<Connect> for GameServer {
@@ -134,8 +140,17 @@ impl Handler<Connect> for GameServer {
 impl Handler<ServerMessage> for GameServer {
     type Result = ();
 
+    // need to check whether the message is a game command.
     fn handle(&mut self, msg: ServerMessage, _: &mut Context<Self>) {
-        self.send_message(&msg.room, msg.msg.as_str(), msg.id);
+        let m = msg.msg;
+
+        if m.starts_with("/command ") {
+            let command = m.split("/command").collect::<Vec<_>>()[1];
+            self.game_command(&msg.room, command);
+            
+        } else {
+            self.send_message(&msg.room, m.as_str(), msg.id);
+        }
     }
 }
 

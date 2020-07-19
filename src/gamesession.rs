@@ -113,6 +113,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for GameSession {
             ws::Message::Text(text) => {
                 let m = text.trim();
 
+
                 let msg = if let Some(ref name) = self.name {
                     format!("{}: {}", name, m)
                 } else {
@@ -124,6 +125,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for GameSession {
                     msg,
                     room: self.room.clone(),
                 })
+                
+
+
             }
 
             ws::Message::Binary(_) => println!("Unexpected binary"),

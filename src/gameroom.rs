@@ -54,9 +54,17 @@ impl Handler<GameMessage> for GameRoom {
     type Result = ();
 
     fn handle(&mut self, msg: GameMessage, _: &mut Context<Self>){
-        self.send_message(msg.msg.as_str(), msg.id);
+        let command = msg.msg;
+        match command.as_ref() {
+            "start_game" => {
+                self.start_game()
+            }
+            _ => ()
+        }
     }
 }
+
+
 
 impl GameRoom {
 
@@ -80,7 +88,7 @@ impl GameRoom {
     // tensor programming had a function in which you can use the await function in a non async function? In webcrawler video.
 
     fn start_game(&mut self) {
-
+        println!("New Game Started");
         // decide on the order for the players
 
         // is there a rustier way of writing this? This also needs to be  the session ids.
